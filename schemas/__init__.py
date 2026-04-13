@@ -1,4 +1,4 @@
 from schemas.cooperado_schema import CooperadoSchema, ConsultaCooperadoSchema, ListaCooperadosSchema, AtualizarCooperadoSchema, ExclusaoCooperadoSchema, ExcluirCooperadoSchema, visualizar_cooperado, listar_cooperados
-from schemas.material_schema import MaterialReciclavelSchema, ConsultaMaterialSchema, ListaMateriaisSchema, AtualizarMaterialSchema, ExcluirMaterialSchema, visualizar_material, listar_materiais
+from schemas.material_schema import MaterialReciclavelSchema, ConsultaMaterialSchema, ListaMateriaisSchema, AtualizarMaterialSchema, ExclusaoCooperadoSchema, ExcluirMaterialSchema, visualizar_material, listar_materiais
 from schemas.triagem_schema import RegistroTriagemSchema, ConsultaRegistroTriagemSchema, ListaTriagemSchema, visualizar_triagem, listar_triagens
 from schemas.error_schema import ErrorSchema
