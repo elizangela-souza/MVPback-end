@@ -1,4 +1,3 @@
-from email.quoprimime import unquote
 from sqlalchemy.exc import IntegrityError
 
 from flask import redirect
