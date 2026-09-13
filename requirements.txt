@@ -9,3 +9,4 @@ SQLAlchemy-Utils
 typing_extensions
 werkzeug
 flask-openapi3[swagger]
+requests

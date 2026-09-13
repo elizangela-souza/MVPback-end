@@ -1,4 +1,6 @@
 from schemas.cooperado_schema import CooperadoSchema, ConsultaCooperadoSchema, ListaCooperadosSchema, AtualizarCooperadoSchema, ExclusaoCooperadoSchema, ExcluirCooperadoSchema, visualizar_cooperado, listar_cooperados
 from schemas.material_schema import MaterialReciclavelSchema, ConsultaMaterialSchema, ListaMateriaisSchema, AtualizarMaterialSchema, ExclusaoMaterialSchema, ExcluirMaterialSchema, visualizar_material, listar_materiais
 from schemas.triagem_schema import RegistroTriagemSchema, ConsultaRegistroTriagemSchema, ListaTriagemSchema, visualizar_triagem, listar_triagens
+from schemas.cliente_schema import ClienteSchema, ConsultaClienteSchema, ListaClientesSchema, AtualizarClienteSchema, ExclusaoClienteSchema, ExcluirClienteSchema, visualizar_cliente, listar_clientes
+from schemas.venda_schema import RegistroVendaSchema, ConsultaRegistroVendaSchema, ListaVendaSchema, visualizar_venda, listar_vendas
 from schemas.error_schema import ErrorSchema

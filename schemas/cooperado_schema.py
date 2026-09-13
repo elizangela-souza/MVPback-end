@@ -46,6 +46,3 @@ class ExclusaoCooperadoSchema(BaseModel):
 class ExcluirCooperadoSchema(BaseModel):
     mesage: str
     matricula: str
-
-   
-
