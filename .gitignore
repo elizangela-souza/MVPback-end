@@ -10,3 +10,5 @@ __pycache__/
 
 # Banco de dados SQLite (se for apenas para desenvolvimento)
 *.sqlite3
+
+log
