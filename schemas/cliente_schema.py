@@ -47,7 +47,7 @@ class AtualizarClienteSchema(BaseModel):
     telefone: Optional[str] = None
 
 class ExclusaoClienteSchema(BaseModel):
-    id: str 
+    cnpj: str 
 
 class ExcluirClienteSchema(BaseModel):
     mesage: str

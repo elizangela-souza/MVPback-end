@@ -466,7 +466,7 @@ def deletar_cliente(query: ExclusaoClienteSchema):
     """
     Exclui o registro de um cliente
     """
-    cnpj = query.id
+    cnpj = query.cnpj
     session = Session()
     try:
         count = session.query(Cliente).filter(Cliente.cnpj==cnpj).delete()
@@ -504,7 +504,7 @@ def cadastrar_venda(body: RegistroVendaSchema):
         venda = RegistroVenda(
             id_cliente = body.id_cliente,
             id_material = body.id_material,
-            data_triagem = body.data_triagem,
+            data_venda = body.data_venda,
             kg_material = body.kg_material
         )
         session.add(venda)
