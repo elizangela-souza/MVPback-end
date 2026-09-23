@@ -41,7 +41,7 @@ class AtualizarCooperadoSchema(BaseModel):
     telefone: Optional[str] = None
 
 class ExclusaoCooperadoSchema(BaseModel):
-    id: str 
+    matricula: str 
 
 class ExcluirCooperadoSchema(BaseModel):
     mesage: str

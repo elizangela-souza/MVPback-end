@@ -143,7 +143,7 @@ def deletar_cooperado(query: ExclusaoCooperadoSchema):
     """
     Exclui o registro de um cooperado
     """
-    matricula = query.id
+    matricula = query.matricula
     session = Session()
     try:
         count = session.query(Cooperado).filter(Cooperado.matricula == matricula).delete()

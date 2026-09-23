@@ -30,6 +30,7 @@ def listar_materiais(materiais: List[MaterialReciclavel]) -> List[MaterialRecicl
 class ConsultaMaterialSchema(BaseModel):
     codigo: int
     
+    
 class ExclusaoMaterialSchema(BaseModel):
     id: int
 
