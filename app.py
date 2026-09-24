@@ -4,21 +4,26 @@ from flask import redirect, request
 from flask_openapi3 import OpenAPI, Info, Tag
 from flask_cors import CORS
 
+from logger import logger
+
+from models import Session
 from models.cooperado import Cooperado
 from models.material_reciclavel import MaterialReciclavel
 from models.registro_triagem import RegistroTriagem
 from models.cliente import Cliente
 from models.registro_venda import RegistroVenda
-from schemas.cooperado_schema import CooperadoSchema, ConsultaCooperadoSchema, ExclusaoCooperadoSchema, ListaCooperadosSchema, AtualizarCooperadoSchema, ExcluirCooperadoSchema, visualizar_cooperado, listar_cooperados
-from schemas.material_schema import ExclusaoMaterialSchema, MaterialReciclavelSchema, ConsultaMaterialSchema, ListaMateriaisSchema, AtualizarMaterialSchema, ExcluirMaterialSchema, visualizar_material, listar_materiais
-from schemas.triagem_schema import RegistroTriagemSchema, ConsultaRegistroTriagemSchema, ListaTriagemSchema,visualizar_triagem, listar_triagens
-from schemas.cliente_schema import ClienteSchema, ConsultaClienteSchema, ListaClientesSchema, ExclusaoClienteSchema, ExcluirClienteSchema, AtualizarClienteSchema, visualizar_cliente, listar_clientes
-from schemas.venda_schema import RegistroVendaSchema, ConsultaRegistroVendaSchema, ListaVendaSchema,visualizar_venda, listar_vendas
+
+from schemas.cooperado_schema import CooperadoSchema, ConsultaCooperadoSchema, ExclusaoCooperadoSchema, ListaCooperadosSchema, AtualizarCooperadoSchema, ExcluirCooperadoSchema, visualizar_cooperado
+from schemas.material_schema import ExclusaoMaterialSchema, MaterialReciclavelSchema, ConsultaMaterialSchema, ListaMateriaisSchema, AtualizarMaterialSchema, ExcluirMaterialSchema, visualizar_material
+from schemas.triagem_schema import RegistroTriagemSchema, ListaTriagemSchema, visualizar_triagem
+from schemas.cliente_schema import ClienteSchema, ConsultaClienteSchema, ListaClientesSchema, ExclusaoClienteSchema, ExcluirClienteSchema, AtualizarClienteSchema, visualizar_cliente
+from schemas.venda_schema import RegistroVendaSchema, ListaVendaSchema,visualizar_venda
 from schemas.error_schema import ErrorSchema
-from models import Session
-from logger import logger
+
+
 from services.estoque_service import atualizar_estoque_material
 from services.viacep_service import consulta_cep
+from services.venda_service import calcular_valor_venda
 
 info = Info(title="API da Cooperativa de Reciclagem", version="1.0.0")
 app = OpenAPI(__name__, info=info)
@@ -455,7 +460,7 @@ def atualizar_cliente(body: AtualizarClienteSchema):
             cliente.telefone = body.telefone
         session.commit()
         logger.debug(f"Dados do cliente com o cnpj '{cnpj}' atualizados")
-        return visualizar_cliente(cnpj), 200
+        return visualizar_cliente(cliente), 200
     else:
         error_mesage = f"Cliente com o cnpj {cnpj} não encontrado"
         logger.warning(f"Erro ao atualizar dados do cliente com cnpj '{cnpj}', {error_mesage}")
@@ -507,6 +512,9 @@ def cadastrar_venda(body: RegistroVendaSchema):
             data_venda = body.data_venda,
             kg_material = body.kg_material
         )
+        
+        # calcula e atribui o valor da venda
+        venda.valor_venda = calcular_valor_venda(session, body.id_material, body.kg_material)
         session.add(venda)
        
         """

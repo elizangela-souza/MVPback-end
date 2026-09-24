@@ -16,6 +16,7 @@ class RegistroVenda(Base):
 
     data_venda = Column(DateTime, default=datetime.now(), index=True)
     kg_material = Column(Float, nullable=False)
+    valor_venda = Column(Float, nullable=True)
      
     # Relacionamento com MaterialReciclavel para acessar valor_kg
     material_reciclavel = relationship('MaterialReciclavel')
