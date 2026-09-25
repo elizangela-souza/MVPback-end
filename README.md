@@ -1,16 +1,19 @@
 # API Cooperativa de Reciclagem
 
->Este projeto é o resultado do MVP da sprint Desenvolvimento Full Stack Básico e buscou atender uma necessidade básica de uma cooperativa de reciclagem, que seria o armazenamento e consulta das informações referentes ao resultado do processo de triagem. 
+>Este projeto é módulo API(back-end) do MVP da sprint Desenvolvimento Back-end Avançado, que visou atender a necessidade de armazenamento e consulta das informações de uma cooperativa de reciclagem.
 
-Esse processo envolve algumas instâncias, sendo estas o cooperado que reliza o processo de triagem e o material reciclável que é separado, preensado e armazenado. Dessa forma, foi desenvolvido métodos para:
 
-- Incluir, consultar, listar e excluir os registros dos cooperados;
-- Atualizar apenas o nome e telefone do registro dos cooperados considerando que os demais atributos são únicos para o banco de dados, como a mátricula do cooperado, ou que não fazem sentido lógico serem alterados no decorrer do tempo, como a data de nascimento.
-- Incluir, consultar, listar e excluir os registros dos materiais recicláveis;
-- Atualizar apenar o valor_kg do registro dos materiais recicláveis considerando que os demais atributos são únicos para o banco de dados, como o código do material, ou devem ser alterados por uma regra de negócio, como o atributo quantidade_kg.
-- Atualizar o estoque de materiais recicláveis, atributo quantidade_kg, após cada triagem realizada;
-- Incluir, listar os registros das triagens;
-- Não há atualização na tabela de registro de triagem tendo em vista que ela representa informações históricas do processo do trabalho dos cooperados.
+Esse processo envolve algumas instâncias, sendo estas o cooperado que reliza o processo de triagem e o material reciclável que é separado, preensado e armazenado. O cliente que compra esse material que foi triado pela cooperativa para realizar o processo de reciclagem. Dessa forma, foi desenvolvido métodos para:
+
+- Incluir, consultar, listar e excluir os registros dos cooperados e clientes.
+- Atualizar apenas o nome e telefone do registro dos cooperados, considerando que os demais atributos são únicos para o banco de dados, como a mátricula do cooperado, ou que não fazem sentido lógico serem alterados no decorrer do tempo, como a data de nascimento.
+- Incluir informações do endereço do cliente no banco de dados a partir de consulta do cep do cliente na API externa [ViaCep](https://viacep.com.br/).
+- Atualizar o nome, cep, email e telefone do registro dos clientes, considerando que o cnpj é único do banco de dados. Ao atualizar o cep, a API externa viaCEP é acionada novamente e as demais informações de endereço são atualizadas.
+- Incluir, consultar e listar os registros de triagem e de venda.
+- Incluir o valor da venda após a inclusão das informações da venda, quantidade_kg e categoria de material reciclável.
+- Incluir na tabela de Material Reciclável um material quando um material de categoria nova é triado.
+- Atualizar o estoque de materiais recicláveis, atributo quantidade_kg, após cada triagem e venda realizadas.
+- Não há atualização na tabela de registro de triagem e da tabela de venda tendo em vista que elas representam informações históricas do trabalho dos cooperados e das vendas realizadas.
 
 ## Tecnologias utilizadas
 As principais ferramentas utilizadas no desenvolvimento:
@@ -18,7 +21,17 @@ As principais ferramentas utilizadas no desenvolvimento:
 - Flask
 - SQLAlchemy
 
-## Como executar 
+## Como executar com Dockerfile
+
+### 1. Utilizar o comando no terminal `docker build -t api-backend .`
+Para construir a imagem.
+
+### 2. Utilizar o comando no terminal `docker run -p 3000:80 api-backend`
+Para rodar o container.
+
+### 3. Acessar o link []() no navegador.
+
+## Como executar sem Dockerfile
 
 Será necessário ter todas as libs python listadas no `requirements.txt` instaladas.
 Após clonar o repositório, é necessário ir ao diretório raiz, pelo terminal, para poder executar os comandos descritos abaixo.

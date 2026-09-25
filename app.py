@@ -448,16 +448,31 @@ def atualizar_cliente(body: AtualizarClienteSchema):
     """
     Atualiza o registro de um cliente
     """
+    
+    #Consulta ViaCep
+    cep = body.cep.replace("-", "").strip()
+    endereco = consulta_cep(cep)
+    if not endereco: 
+        return {"error": f"CEP '{body.cep}' inválido ou não encontrado."}, 404
+
     cnpj = body.cnpj
     session = Session()
     cliente = session.query(Cliente).filter(Cliente.cnpj==cnpj).first()
     if cliente:
         if body.nome is not None:
             cliente.nome = body.nome
+        if body.cep is not None:
+            cliente.cep = body.cep
         if body.email is not None:
             cliente.email = body.email
         if body.telefone is not None:
             cliente.telefone = body.telefone
+            
+        cliente.logradouro = endereco.get("logradouro")
+        cliente.bairro = endereco.get("bairro")
+        cliente.cidade = endereco.get("localidade")
+        cliente.uf = endereco.get("uf")
+        
         session.commit()
         logger.debug(f"Dados do cliente com o cnpj '{cnpj}' atualizados")
         return visualizar_cliente(cliente), 200

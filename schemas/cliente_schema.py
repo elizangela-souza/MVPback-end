@@ -33,6 +33,7 @@ def listar_clientes(clientes: List[Cliente]) -> List[Cliente]:
      return [ClienteSchema(
         cnpj= cliente.cnpj,
         nome=cliente.nome,
+        cep=cliene.cep,
         email=cliente.email,
         telefone=cliente.telefone
     ) for cliente in clientes]
@@ -43,6 +44,7 @@ class ConsultaClienteSchema(BaseModel):
 class AtualizarClienteSchema(BaseModel):
     cnpj: str
     nome: Optional[str] = None
+    cep: Optional[str] = None
     email: Optional[str] = None
     telefone: Optional[str] = None
 
