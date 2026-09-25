@@ -1,19 +1,32 @@
 # API Cooperativa de Reciclagem
 
->Este projeto é módulo API(back-end) do MVP da sprint Desenvolvimento Back-end Avançado, que visou atender a necessidade de armazenamento e consulta das informações de uma cooperativa de reciclagem.
+>Este projeto é o módulo API(back-end) do MVP da Sprint Desenvolvimento Back-end Avançado. Ele foi desenvolvido para atender às necessidades de armazenamento e consulta de informações de uma cooperativa de reciclagem.
 
 
-Esse processo envolve algumas instâncias, sendo estas o cooperado que reliza o processo de triagem e o material reciclável que é separado, preensado e armazenado. O cliente que compra esse material que foi triado pela cooperativa para realizar o processo de reciclagem. Dessa forma, foi desenvolvido métodos para:
+## Funcionalidades
+Esse projeto envolve algumas instâncias, sendo estas o cooperado que realiza o processo de triagem e o material reciclável que é separado, prensado e armazenado. O cliente que compra esse material que foi triado pela cooperativa para realizar o processo de reciclagem. Dessa forma, foi desenvolvido métodos para:
 
-- Incluir, consultar, listar e excluir os registros dos cooperados e clientes.
-- Atualizar apenas o nome e telefone do registro dos cooperados, considerando que os demais atributos são únicos para o banco de dados, como a mátricula do cooperado, ou que não fazem sentido lógico serem alterados no decorrer do tempo, como a data de nascimento.
+### Cooperado 
+- Incluir, consultar, listar e excluir os registros dos cooperados.
+- Atualizar apenas nome e telefone do registro dos cooperados, considerando que os demais atributos são únicos para o banco de dados, como a matrícula do cooperado, ou que não fazem sentido lógico serem alterados no decorrer do tempo, como a data de nascimento.
+
+### Cliente
+- Incluir, consultar, listar e excluir os registros dos clientes.
 - Incluir informações do endereço do cliente no banco de dados a partir de consulta do cep do cliente na API externa [ViaCep](https://viacep.com.br/).
-- Atualizar o nome, cep, email e telefone do registro dos clientes, considerando que o cnpj é único do banco de dados. Ao atualizar o cep, a API externa viaCEP é acionada novamente e as demais informações de endereço são atualizadas.
-- Incluir, consultar e listar os registros de triagem e de venda.
-- Incluir o valor da venda após a inclusão das informações da venda, quantidade_kg e categoria de material reciclável.
-- Incluir na tabela de Material Reciclável um material quando um material de categoria nova é triado.
+- Atualizar nome, cep, e-mail e telefone do registro dos clientes, considerando que o cnpj é um registro imutável. Ao atualizar o cep, a API externa viaCEP é acionada novamente e as demais informações de endereço são atualizadas.
+
+### Triagem
+- Incluir, consultar e listar os registros de triagem.
+- Não há atualização na tabela de registro de triagem tendo em vista que elas representam informações históricas do trabalho dos cooperados.
+
+### Venda
+- Incluir, consultar e listar os registros de venda.
+- Incluir o valor da venda a partir das informações registradas (quantidade_kg e categoria de material reciclável). O cálculo é feito consultando o valor por quilograma da categoria na tabela de Materiais Recicláveis.
+- Não há atualização na tabela de registro de venda tendo em vista que elas representam informações históricas das vendas realizadas.
+
+### Material reciclável
+- Incluir na tabela de Material Reciclável um novo registro de material quando uma categoria nova for registrada na triagem.
 - Atualizar o estoque de materiais recicláveis, atributo quantidade_kg, após cada triagem e venda realizadas.
-- Não há atualização na tabela de registro de triagem e da tabela de venda tendo em vista que elas representam informações históricas do trabalho dos cooperados e das vendas realizadas.
 
 ## Tecnologias utilizadas
 As principais ferramentas utilizadas no desenvolvimento:
@@ -24,12 +37,14 @@ As principais ferramentas utilizadas no desenvolvimento:
 ## Como executar com Dockerfile
 
 ### 1. Utilizar o comando no terminal `docker build -t api-backend .`
-Para construir a imagem.
+Para construir a imagem a partir do Dockerfile.
 
-### 2. Utilizar o comando no terminal `docker run -p 3000:80 api-backend`
-Para rodar o container.
+Caso esteja utilizando Windows, deve primeiro abrir o aplicativo [Docker Desktop](https://docs.docker.com/desktop/setup/install/windows-install/?uuid=BBEA0E54-C959-4598-A02E-B324AE057A35#system-requirements) no seu computador e ter instalado o WSL2 ou uma máquina virtual interna.
 
-### 3. Acessar o link []() no navegador.
+### 2. Utilizar o comando no terminal `docker run -d -p 5000:5000 api-backend`
+Para criar e inicializar o container a partir da imagem api-backend já construída.
+
+### 3. Acessar a aplicação pelo link [http://localhost:5000/](http://localhost:5000/) no navegador
 
 ## Como executar sem Dockerfile
 
