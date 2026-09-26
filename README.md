@@ -33,6 +33,7 @@ As principais ferramentas utilizadas no desenvolvimento:
 - Python 
 - Flask
 - SQLAlchemy
+- Webservice ViaCEP
 
 ## Como executar com Dockerfile
 
