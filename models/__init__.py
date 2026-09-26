@@ -8,6 +8,8 @@ from models.base import Base
 from models.cooperado import Cooperado
 from models.material_reciclavel import MaterialReciclavel
 from models.registro_triagem import RegistroTriagem
+from models.cliente import Cliente
+from models.registro_venda import RegistroVenda
 
 db_path = 'database/'
 

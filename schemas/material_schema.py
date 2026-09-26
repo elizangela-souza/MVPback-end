@@ -17,7 +17,7 @@ def visualizar_material(material: MaterialReciclavel):
     }
 
 class ListaMateriaisSchema(BaseModel):
-    materials: list[MaterialReciclavelSchema]
+    materiais: list[MaterialReciclavelSchema]
 
 def listar_materiais(materiais: List[MaterialReciclavel]) -> List[MaterialReciclavel]:
      return [MaterialReciclavelSchema(
@@ -29,6 +29,7 @@ def listar_materiais(materiais: List[MaterialReciclavel]) -> List[MaterialRecicl
 
 class ConsultaMaterialSchema(BaseModel):
     codigo: int
+    
     
 class ExclusaoMaterialSchema(BaseModel):
     id: int

@@ -1,19 +1,29 @@
 from sqlalchemy.exc import IntegrityError
 
-from flask import redirect
+from flask import redirect, request
 from flask_openapi3 import OpenAPI, Info, Tag
 from flask_cors import CORS
 
+from logger import logger
+
+from models import Session
 from models.cooperado import Cooperado
 from models.material_reciclavel import MaterialReciclavel
 from models.registro_triagem import RegistroTriagem
-from schemas.cooperado_schema import CooperadoSchema, ConsultaCooperadoSchema, ExclusaoCooperadoSchema, ListaCooperadosSchema, AtualizarCooperadoSchema, ExcluirCooperadoSchema, visualizar_cooperado, listar_cooperados
-from schemas.material_schema import ExclusaoMaterialSchema, MaterialReciclavelSchema, ConsultaMaterialSchema, ListaMateriaisSchema, AtualizarMaterialSchema, ExcluirMaterialSchema, visualizar_material, listar_materiais
-from schemas.triagem_schema import RegistroTriagemSchema, ConsultaRegistroTriagemSchema, ListaTriagemSchema,visualizar_triagem, listar_triagens
+from models.cliente import Cliente
+from models.registro_venda import RegistroVenda
+
+from schemas.cooperado_schema import CooperadoSchema, ConsultaCooperadoSchema, ExclusaoCooperadoSchema, ListaCooperadosSchema, AtualizarCooperadoSchema, ExcluirCooperadoSchema, visualizar_cooperado
+from schemas.material_schema import ExclusaoMaterialSchema, MaterialReciclavelSchema, ConsultaMaterialSchema, ListaMateriaisSchema, AtualizarMaterialSchema, ExcluirMaterialSchema, visualizar_material
+from schemas.triagem_schema import RegistroTriagemSchema, ListaTriagemSchema, visualizar_triagem
+from schemas.cliente_schema import ClienteSchema, ConsultaClienteSchema, ListaClientesSchema, ExclusaoClienteSchema, ExcluirClienteSchema, AtualizarClienteSchema, visualizar_cliente
+from schemas.venda_schema import RegistroVendaSchema, ListaVendaSchema,visualizar_venda
 from schemas.error_schema import ErrorSchema
-from models import Session
-from logger import logger
-from service import atualizar_estoque_material
+
+
+from services.estoque_service import atualizar_estoque_material
+from services.viacep_service import consulta_cep
+from services.venda_service import calcular_valor_venda
 
 info = Info(title="API da Cooperativa de Reciclagem", version="1.0.0")
 app = OpenAPI(__name__, info=info)
@@ -24,6 +34,8 @@ home_tag = Tag(name="Documentação", description="Seleção de documentação: 
 cooperado_tag = Tag(name="Cooperado", description="Operações relacionadas aos registros dos cooperados: inclusão, consulta, atualização e exclusão.")
 material_tag = Tag(name="MaterialReciclavel", description="Operações relacionadas aos registros dos materias recicláveis: inclusão, consulta, atualização e exclusão.")
 triagem_tag = Tag(name="RegistroTriagem", description="Operações relacionadas aos registros das triagens: inclusão e consulta")
+cliente_tag = Tag(name="Cliente", description="Operações relacionadas aos registros de clientes: inclusão, consulta, atualização e exclusão.")
+venda_tag = Tag(name="RegistroVenda", description="Operações relacionadas aos registros das vendas: inclusão e consulta")
 
 @app.get('/', tags=[home_tag])
 def home():
@@ -34,23 +46,23 @@ def home():
 
 #OPERAÇÕES COOPERADO
 @app.post('/cadastrar_cooperado', tags=[cooperado_tag], responses={"200": CooperadoSchema, "404": ErrorSchema})
-def cadastrar_cooperado(form: CooperadoSchema):
+def cadastrar_cooperado(body: CooperadoSchema):
     """
     Inclui o registro de um cooperado
     """
     cooperado = Cooperado(
-        matricula = form.matricula,
-        nome = form.nome,
-        cpf = form.cpf,
-        data_nascimento = form.data_nascimento,
-        telefone = form.telefone
+        matricula = body.matricula,
+        nome = body.nome,
+        cpf = body.cpf,
+        data_nascimento = body.data_nascimento,
+        telefone = body.telefone
     )
-    logger.debug(f"Incluindo registro do/a cooperado/a com a matrícula '{cooperado.matricula}' ao banco de dados.")
+    logger.debug(f"Incluindo registro do/a cooperado/a com a matrícula '{cooperado.matricula}' no banco de dados.")
     try:
         session = Session()
         session.add(cooperado)
         session.commit()
-        logger.debug(f"Registro de Cooperado/a '{cooperado.nome}' com a matrícula '{cooperado.matricula}' incluído ao banco de dados.")
+        logger.debug(f"Registro de Cooperado/a '{cooperado.nome}' com a matrícula '{cooperado.matricula}' incluído no banco de dados.")
         return visualizar_cooperado(cooperado), 200
     except IntegrityError:
         session.rollback()
@@ -110,18 +122,18 @@ def buscar_cooperados():
 
 
 @app.put('/atualizar_cooperado', tags=[cooperado_tag], responses={"200": CooperadoSchema, "404": ErrorSchema})
-def atualizar_cooperado(form: AtualizarCooperadoSchema):
+def atualizar_cooperado(body: AtualizarCooperadoSchema):
     """
     Atualiza o registro de um cooperado
     """
-    matricula = form.matricula
+    matricula = body.matricula
     session = Session()
     cooperado = session.query(Cooperado).filter(Cooperado.matricula == matricula).first()
     if cooperado:
-        if form.nome is not None:
-            cooperado.nome = form.nome
-        if form.telefone is not None:
-            cooperado.telefone = form.telefone
+        if body.nome is not None:
+            cooperado.nome = body.nome
+        if body.telefone is not None:
+            cooperado.telefone = body.telefone
         session.commit()
         logger.debug(f"Dados do/a cooperado/a com a matrícula '{matricula}' atualizados")
         return visualizar_cooperado(cooperado), 200
@@ -136,7 +148,7 @@ def deletar_cooperado(query: ExclusaoCooperadoSchema):
     """
     Exclui o registro de um cooperado
     """
-    matricula = query.id
+    matricula = query.matricula
     session = Session()
     try:
         count = session.query(Cooperado).filter(Cooperado.matricula == matricula).delete()
@@ -156,15 +168,15 @@ def deletar_cooperado(query: ExclusaoCooperadoSchema):
 
 #OPERAÇÕES MATERIAL RECICLÁVEL
 @app.post('/cadastrar_material', tags=[material_tag], responses={"200": MaterialReciclavelSchema, "404": ErrorSchema})
-def cadastrar_material(form: MaterialReciclavelSchema):
+def cadastrar_material(body: MaterialReciclavelSchema):
     """
     Inclui o registro de um material reciclável
     """  
     material = MaterialReciclavel(
-        codigo = form.codigo,
-        categoria = form.categoria,
-        quantidade_kg = form.quantidade_kg,
-        valor_kg = form.valor_kg
+        codigo = body.codigo,
+        categoria = body.categoria,
+        quantidade_kg = body.quantidade_kg,
+        valor_kg = body.valor_kg
     )
     logger.debug(f"Incluindo material '{material.categoria}' com código '{material.codigo}' ao banco de dados.")
     try:
@@ -230,16 +242,16 @@ def buscar_materiais():
 
 
 @app.put('/atualizar_material', tags=[material_tag], responses={"200": MaterialReciclavelSchema, "404": ErrorSchema})
-def atualizar_material(form: AtualizarMaterialSchema):
+def atualizar_material(body: AtualizarMaterialSchema):
     """
     Atualiza o registro de um material
     """
-    codigo = form.codigo
+    codigo = body.codigo
     session = Session()
     material = session.query(MaterialReciclavel).filter(MaterialReciclavel.codigo == codigo).first()
     if material:
-        if form.valor_kg is not None:
-            material.valor_kg = form.valor_kg
+        if body.valor_kg is not None:
+            material.valor_kg = body.valor_kg
         session.commit()
         logger.debug(f"Dados do material com a código '{codigo}' atualizados")
         return visualizar_material(material), 200
@@ -273,27 +285,27 @@ def excluir_material(query: ExclusaoMaterialSchema):
 
 #OPERAÇÕES REGISTRO TRIAGEM
 @app.post('/cadastrar_triagem', tags=[triagem_tag], responses={"200": RegistroTriagemSchema, "404": ErrorSchema})
-def cadastrar_triagem(form: RegistroTriagemSchema):
+def cadastrar_triagem(body: RegistroTriagemSchema):
     """
     Inclui o registro de triagem
     """
     session = Session()
     try:
         # Verifica se o cooperado existe
-        cooperado = session.query(Cooperado).filter(Cooperado.matricula==form.id_cooperado).first()
+        cooperado = session.query(Cooperado).filter(Cooperado.matricula==body.id_cooperado).first()
         if not cooperado:
             return {"error": "Cooperado não encontrado"}, 404
 
         # Verifica se o material existe
-        material = session.query(MaterialReciclavel).filter(MaterialReciclavel.codigo==form.id_material).first()
+        material = session.query(MaterialReciclavel).filter(MaterialReciclavel.codigo==body.id_material).first()
         if not material:
             return {"error": "Material não encontrado"}, 404
 
         triagem = RegistroTriagem(
-            id_cooperado = form.id_cooperado,
-            id_material = form.id_material,
-            data_triagem = form.data_triagem,
-            kg_material = form.kg_material
+            id_cooperado = body.id_cooperado,
+            id_material = body.id_material,
+            data_triagem = body.data_triagem,
+            kg_material = body.kg_material
         )
         session.add(triagem)
        
@@ -320,7 +332,7 @@ def cadastrar_triagem(form: RegistroTriagemSchema):
         return {"error": str(error)}, 404
     except Exception as error:
         session.rollback() 
-        logger.warning(f"Erro ao incluir registro da triagem para cooperado'{form.id_cooperado}' e material {form.id_material}")
+        logger.warning(f"Erro ao incluir registro da triagem para cooperado'{body.id_cooperado}' e material {body.id_material}")
         return {"error": "Erro interno: " + str(error)}, 500
     finally:
         session.close()
@@ -342,7 +354,229 @@ def buscar_triagens():
             logger.warning(f"Erro ao consultar registro de triagens: {error_message}")
             return {"triagens": []}, 200
     except Exception as error:
-        logger.error(f"Erro ao consultar registros dos cooperados: {error}")
+        logger.error(f"Erro ao consultar registros: {error}")
+        return {"error": "Falha ao consultar o banco"}, 500
+    finally:
+        session.close()
+
+#OPERAÇÕES CLIENTE
+@app.post('/cadastrar_cliente', tags=[cliente_tag], responses={"200": ClienteSchema, "404": ErrorSchema})
+def cadastrar_cliente(body: ClienteSchema):
+    """
+    Inclui o registro de um cliente com preenchimento automático do endereço via API externa Via Cep 
+    """
+    #Consulta ViaCep
+    cep = body.cep.replace("-", "").strip()
+    endereco = consulta_cep(cep)
+    if not endereco: 
+        return {"error": f"CEP '{body.cep}' inválido ou não encontrado."}, 404
+    
+    cliente = Cliente(
+        cnpj = body.cnpj,
+        nome = body.nome,
+        cep = cep,
+        logradouro = endereco.get("logradouro"),
+        bairro = endereco.get("bairro"),
+        cidade = endereco.get("localidade"),
+        uf = endereco.get("uf"),
+        email = body.email,
+        telefone = body.telefone
+    )
+    logger.debug(f"Incluindo registro de um cliente com o cnpj '{cliente.cnpj}' no banco de dados.")
+    try:
+        session = Session()
+        session.add(cliente)
+        session.commit()
+        logger.debug(f"Registro de cliente '{cliente.nome}' com o cnpj '{cliente.cnpj}' incluído no banco de dados.")
+        return visualizar_cliente(cliente), 200
+    except IntegrityError:
+        session.rollback()
+        error_message = f"Já existe um cliente com o cnpj '{cliente.cnpj}' cadastrado."
+        logger.warning(error_message)
+        return {"error": error_message}, 404
+    except Exception as error:
+        session.rollback()
+        error_mesage = f"Erro ao adicionar cliente com o cnpj '{cliente.cnpj}"
+        logger.warning(f"{error_mesage}: {error}")
+        return  {"error": error_mesage}, 404
+
+@app.get('/buscar_cliente', tags=[cliente_tag], responses={"200": ClienteSchema, "404": ErrorSchema})
+def buscar_cliente(query: ConsultaClienteSchema):
+    """
+    Consulta o registro de um cliente
+    """
+    cnpj = query.cnpj
+    session = Session()
+    try:   
+        cliente = session.query(Cliente).filter(Cliente.cnpj==cnpj).first()
+        if cliente:
+            logger.debug(f"Registro de um cliente com cnpj '{cnpj}' encontrado")
+            return visualizar_cliente(cliente), 200
+        else:
+            error_mesage = f"Registro do cliente com cnpj {cnpj} não encontrado"
+            logger.warning(f"Erro ao consultar registro com cnpj {cnpj}")
+            return  {"error": error_mesage}, 404
+    except Exception as e:
+        logger.error(f"Erro interno ao consultar cliente - {cnpj}: {e}")
+        return {"error": "Falha interna ao consultar cliente"}, 500
+    finally:
+        session.close()
+
+@app.get('/buscar_clientes', tags=[cliente_tag], responses={"200": ListaClientesSchema, "500": ErrorSchema})
+def buscar_clientes():
+    """
+    Consulta todos os registro da tabela Cliente
+    """
+    session = Session()
+    try:
+        clientes = session.query(Cliente).all()
+        if clientes:
+            logger.debug(f"Total de clientes encontrados: {len(clientes)}")
+            return {"clientes": [visualizar_cliente(cliente) for cliente in clientes]}, 200
+        else:
+            error_mesage = "Nenhum registro de cliente encontrado"
+            logger.warning("Nenhum registro de cliente encontrado")
+            return  {"clientes": []}, 200
+    except Exception as error:
+        logger.error(f"Erro ao consultar registros de clientes: {error_mesage}")
+        return {"error": "Falha ao consultar o banco"}, 500
+    finally:
+        session.close()
+
+@app.put('/atualizar_cliente', tags=[cliente_tag], responses={"200": ClienteSchema, "404": ErrorSchema})
+def atualizar_cliente(body: AtualizarClienteSchema):
+    """
+    Atualiza o registro de um cliente
+    """
+    
+    #Consulta ViaCep
+    cep = body.cep.replace("-", "").strip()
+    endereco = consulta_cep(cep)
+    if not endereco: 
+        return {"error": f"CEP '{body.cep}' inválido ou não encontrado."}, 404
+
+    cnpj = body.cnpj
+    session = Session()
+    cliente = session.query(Cliente).filter(Cliente.cnpj==cnpj).first()
+    if cliente:
+        if body.nome is not None:
+            cliente.nome = body.nome
+        if body.cep is not None:
+            cliente.cep = body.cep
+        if body.email is not None:
+            cliente.email = body.email
+        if body.telefone is not None:
+            cliente.telefone = body.telefone
+            
+        cliente.logradouro = endereco.get("logradouro")
+        cliente.bairro = endereco.get("bairro")
+        cliente.cidade = endereco.get("localidade")
+        cliente.uf = endereco.get("uf")
+        
+        session.commit()
+        logger.debug(f"Dados do cliente com o cnpj '{cnpj}' atualizados")
+        return visualizar_cliente(cliente), 200
+    else:
+        error_mesage = f"Cliente com o cnpj {cnpj} não encontrado"
+        logger.warning(f"Erro ao atualizar dados do cliente com cnpj '{cnpj}', {error_mesage}")
+        return  {"error": error_mesage}, 404
+
+@app.delete('/deletar_cliente', tags=[cliente_tag], responses={"200": ExcluirClienteSchema, "404": ErrorSchema})
+def deletar_cliente(query: ExclusaoClienteSchema):
+    """
+    Exclui o registro de um cliente
+    """
+    cnpj = query.cnpj
+    session = Session()
+    try:
+        count = session.query(Cliente).filter(Cliente.cnpj==cnpj).delete()
+        session.commit()
+        if count: 
+            logger.debug(f"Exclusão do registro do cliente com cnpj {cnpj} realizada com sucesso")
+            return {"mesage": f"Cliente com cnpj {cnpj} excluído com sucesso do banco de dados!"}, 200
+        else:
+            logger.debug(f"Erro na exclusão: cnpj {cnpj} não encontrado")
+            return {"error": "Registro não encontrado"}, 404
+    except Exception as e:
+        logger.error(f"Erro interno ao excluir cliente - {cnpj}: {e}")
+        return {"error": "Falha interna ao excluir cliente"}, 500
+    finally:
+        session.close()
+        
+#OPERAÇÕES REGISTRO VENDA
+@app.post('/cadastrar_venda', tags=[venda_tag], responses={"200": RegistroVendaSchema, "404": ErrorSchema})
+def cadastrar_venda(body: RegistroVendaSchema):
+    """
+    Inclui o registro de venda para um cliente
+    """
+    session = Session()
+    try:
+        # Verifica se o cliente existe
+        cliente = session.query(Cliente).filter(Cliente.cnpj==body.id_cliente).first()
+        if not cliente:
+            return {"error": "Cliente não encontrado"}, 404
+
+        # Verifica se o material existe
+        material = session.query(MaterialReciclavel).filter(MaterialReciclavel.codigo==body.id_material).first()
+        if not material:
+            return {"error": "Material não encontrado"}, 404
+
+        venda = RegistroVenda(
+            id_cliente = body.id_cliente,
+            id_material = body.id_material,
+            data_venda = body.data_venda,
+            kg_material = body.kg_material
+        )
+        
+        # calcula e atribui o valor da venda
+        venda.valor_venda = calcular_valor_venda(session, body.id_material, body.kg_material)
+        session.add(venda)
+       
+        """
+        Atualiza o estoque (quantidade em Kg) dos materiais recicláveis após o registro da venda
+        """
+        atualizar_estoque_material(
+            session=session, 
+            id_material=venda.id_material, 
+            kg_material=venda.kg_material, 
+            tipoRegistro="venda"
+        )
+        
+        session.commit()
+
+        logger.debug(f"Registro de venda '{venda.id_registro}' incluído e estoque atualizado para material '{venda.id_material}'.")
+        return {"venda": visualizar_venda(venda)}, 200
+    except IntegrityError:
+        session.rollback()
+        return {"error": "Cliente ou Material não existem nos registros"}, 404
+    except ValueError as error:
+        session.rollback()
+        logger.warning(f"Erro ao incluir venda")
+        return {"error": str(error)}, 404
+    except Exception as error:
+        session.rollback() 
+        logger.warning(f"Erro ao incluir registro da venda para cliente'{body.id_cliente}' e material {body.id_material}")
+        return {"error": "Erro interno: " + str(error)}, 500
+    finally:
+        session.close()
+        
+@app.get('/buscar_vendas', tags=[venda_tag], responses={"200": ListaVendaSchema, "500": ErrorSchema})
+def buscar_vendas():
+    """
+    Consulta todos os registros da tabela de vendas
+    """
+    session = Session()
+    try:
+        vendas = session.query(RegistroVenda).all()
+        if vendas:
+            logger.debug(f"Total de registros de vendas encontrados: {len(vendas)}")
+            return {"vendas": [visualizar_venda(venda) for venda in vendas]}, 200
+        else:
+            error_message = "Nenhum registro de venda encontrado"
+            logger.warning(f"Erro ao consultar registro de vendas: {error_message}")
+            return {"vendas": []}, 200
+    except Exception as error:
+        logger.error(f"Erro ao consultar registros: {error}")
         return {"error": "Falha ao consultar o banco"}, 500
     finally:
         session.close()

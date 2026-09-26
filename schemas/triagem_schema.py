@@ -21,7 +21,7 @@ def visualizar_triagem(triagem: RegistroTriagem):
     }
 
 class ListaTriagemSchema(BaseModel):
-    materials: list[RegistroTriagemSchema]
+    triagens: list[RegistroTriagemSchema]
 
 def listar_triagens(triagens: List[RegistroTriagem]) -> List[RegistroTriagem]:
      return [RegistroTriagemSchema(

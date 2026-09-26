@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import date
 
 from pydantic import BaseModel, Field
 from typing import List, Optional
@@ -8,7 +8,7 @@ class CooperadoSchema(BaseModel):
     matricula: str 
     nome: str = Field(..., example="Maria Santos")
     cpf: str  = Field(..., example="01234567891")
-    data_nascimento: datetime = Field(..., example="1970-03-29")
+    data_nascimento: date = Field(..., example="1970-03-29")
     telefone: Optional[str] = Field(None, example="(61)99999-9999")
 
 def visualizar_cooperado(cooperado: Cooperado):
@@ -41,11 +41,8 @@ class AtualizarCooperadoSchema(BaseModel):
     telefone: Optional[str] = None
 
 class ExclusaoCooperadoSchema(BaseModel):
-    id: str 
+    matricula: str 
 
 class ExcluirCooperadoSchema(BaseModel):
     mesage: str
     matricula: str
-
-   
-
